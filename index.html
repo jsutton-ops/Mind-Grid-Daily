@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mind Grid Daily</title>
+<script src="questions.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* VOICE: a sharp, friendly puzzle setter; confident, never smug
+   IDEA: the daily puzzle page of a good newspaper, five boxed teasers and a running score
+   PICTURE: the live puzzle card itself, with a five-segment skill strip and an IQ dial
+   COLOUR and TYPE: deep teal ground, chalk white cards, coral accent, one hue per skill; Archivo + Inter
+   LAYOUT: one centred column, header band, dial and strip, then the card; stacks naturally on a phone */
+:root{color-scheme:light dark;
+--bg:light-dark(#0e4d53,#071f22);--card:light-dark(#ffffff,#10292c);--ink:light-dark(#13282a,#e8f1f0);--soft:light-dark(#5b6f71,#9fb4b3);
+--line:light-dark(#dbe5e4,#21413f);--on:#f4fbfa;--accent:#ff6b4a;
+--n:#ff6b4a;--v:#f2b134;--l:#3fa7ff;--s:#a77bff;--x:#2ec4a6}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--on);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:clamp(20px,4vw,44px) max(4vw,14px) 60px}
+h1{font:800 clamp(32px,6vw,48px)/1.05 Archivo,sans-serif;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:#bfe0dc;margin:0 0 22px;max-width:60ch}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:18px;align-items:center;margin-bottom:18px}
+.strip{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.seg{border-radius:10px;padding:8px 6px 7px;background:rgba(255,255,255,.08);border:2px solid transparent;text-align:center;font-size:13px;line-height:1.2;color:#d6ecea}
+.seg b{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.18);margin-bottom:6px}
+.seg.cur{border-color:var(--c)}.seg.ok b{background:var(--c)}.seg.bad b{background:repeating-linear-gradient(45deg,var(--c) 0 4px,transparent 4px 8px)}
+.dial{position:relative;text-align:center}
+.dial svg{width:190px;height:110px;display:block}
+.dial .val{position:absolute;left:0;right:0;top:46px;font:800 34px/1 Archivo,sans-serif}
+.dial .rng{font-size:13px;color:#bfe0dc;margin-top:-4px}
+.card{background:var(--card);color:var(--ink);border-radius:18px;padding:clamp(18px,4vw,32px);box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.tag{display:inline-flex;align-items:center;gap:8px;font:700 14px Archivo,sans-serif;color:var(--c)}
+.tag i{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;color:var(--soft);font-size:14px;margin-bottom:10px}
+.q{font:700 clamp(20px,3.4vw,25px)/1.3 Archivo,sans-serif;margin:6px 0 18px;text-wrap:pretty}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+button{font:inherit;cursor:pointer}
+.opt{min-height:52px;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:transparent;color:var(--ink);text-align:left;font-weight:500;font-size:16px;transition:border-color .15s,background .15s}
+.opt:hover:not(:disabled){border-color:var(--c)}
+.opt:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt.right{border-color:#1fa67a;background:color-mix(in srgb,#1fa67a 14%,transparent)}
+.opt.wrong{border-color:#e5484d;background:color-mix(in srgb,#e5484d 12%,transparent)}
+.opt:disabled{cursor:default}
+.fb{margin-top:18px;padding:14px 16px;border-radius:12px;background:color-mix(in srgb,var(--c) 10%,transparent);border-left:4px solid var(--c)}
+.fb h3,.drill h3{margin:0 0 4px;font:700 17px Archivo,sans-serif}
+.fb p,.drill p{margin:4px 0}
+.drill{margin-top:14px;padding:16px;border-radius:12px;border:2px dashed var(--c)}
+.drill .ans{display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--c) 12%,transparent)}
+.drill.show .ans{display:block}.drill.show .reveal{display:none}
+.tip{color:var(--soft);font-size:15px}
+.btn{min-height:46px;padding:10px 20px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-weight:600;margin-top:16px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.big{font:800 clamp(40px,9vw,64px)/1 Archivo,sans-serif;margin:6px 0}
+.clock{font:700 clamp(28px,6vw,40px)/1 Archivo,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bars{display:grid;gap:8px;margin-top:14px}
+.bar{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:14px}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.track{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.track i{display:block;height:100%;background:var(--c)}
+.note{color:#bfe0dc;font-size:13px;margin-top:18px;max-width:64ch}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.stat{border:2px solid var(--line);border-radius:12px;padding:10px;text-align:center}.stat b{display:block;font:800 24px Archivo,sans-serif}.stat span{font-size:13px;color:var(--soft)}
+.pop{animation:pop .35s ease}@keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.pop{animation:none}}
+@media(max-width:600px){.top{grid-template-columns:minmax(0,1fr)}.dial{order:-1}.dial svg{margin:0 auto}.opts{grid-template-columns:minmax(0,1fr)}.seg{font-size:11px;padding:7px 3px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mind Grid Daily</h1>
+  <p class="sub">Five puzzles, five kinds of thinking. A new set unlocks every day at 4pm, with a full year of puzzles.</p>
+  <div class="top">
+    <div class="strip" id="strip"></div>
+    <div class="dial" aria-live="polite">
+      <svg viewBox="0 0 190 110" aria-hidden="true">
+        <path d="M15 100 A80 80 0 0 1 175 100" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="14" stroke-linecap="round"/>
+        <path id="arc" d="M15 100 A80 80 0 0 1 175 100" fill="none" stroke="#ff6b4a" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/>
+      </svg>
+      <div class="val" id="iq">100</div>
+      <div class="rng" id="rng">Estimated IQ</div>
+    </div>
+  </div>
+  <div class="card pop" id="card"></div>
+  <p class="note">The IQ figure is a playful running estimate built from how you do against each puzzle's difficulty. It firms up as you play more days, but it is not a validated psychometric test. Progress is saved in this browser only.</p>
+</div>
+<script>
+{
+const M=window.MINDGRID;
+const card0=document.getElementById('card');
+if(!M||!M.categories){card0.innerHTML='<h2 style="margin:0 0 8px;font:700 22px Archivo,sans-serif">The question bank could not load</h2><p>Check that questions.js sits in the same folder as this page. If you have just edited it, a missing comma or quote mark is the usual cause.</p>';throw new Error('questions.js missing')}
+const COL={n:'var(--n)',v:'var(--v)',l:'var(--l)',s:'var(--s)',x:'var(--x)'};
+const ORDER=Object.keys(M.categories).slice(0,5);
+const CATS={};ORDER.forEach(c=>CATS[c]={name:M.categories[c].name,c:COL[c]||'var(--accent)'});
+const KEY='mindgrid-v2';
+let S={days:{},hist:[]};
+try{const raw=localStorage.getItem(KEY);if(raw)S=JSON.parse(raw)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const HR=16;
+function dayKey(t=new Date()){const s=new Date(t.getTime()-HR*3600e3);return Math.round(Date.UTC(s.getFullYear(),s.getMonth(),s.getDate())/864e5)}
+function nextReset(){const n=new Date(),r=new Date(n);r.setHours(HR,0,0,0);if(n>=r)r.setDate(r.getDate()+1);return r}
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
+const START=(()=>{const p=String(M.startDate||'2026-11-25').split('-').map(Number);return Math.round(Date.UTC(p[0],p[1]-1,p[2])/864e5)})();
+function todaySet(k){
+  const day=k-START;
+  return ORDER.map((c,i)=>{const b=M.categories[c].questions;const idx=((day%b.length)+b.length)%b.length;const q=b[idx];
+    let ans=q.options.indexOf(q.answer);if(ans<0)ans=0;
+    const r=rng(k*31+i*97+idx);const ord=q.options.map((_,j)=>j).sort(()=>r()-.5);
+    return {c,idx,q:q.q,opts:ord.map(j=>q.options[j]),ans:ord.indexOf(ans),d:+q.level||110,ex:q.explain||''}})}
+function estimate(){
+  let th=100;S.hist.forEach((h,n)=>{const p=1/(1+Math.exp(-(th-h.d)/12));const K=Math.max(3,22/Math.sqrt(1+n*.4));th+=K*((h.ok?1:0)-p)});
+  th=Math.max(70,Math.min(160,th));const n=S.hist.length;const pm=n?Math.max(5,Math.round(28/Math.sqrt(n))):null;return {iq:Math.round(th),pm,n}}
+
+const card=document.getElementById('card'),strip=document.getElementById('strip');
+const K=dayKey();const SET=todaySet(K);
+if(!S.days[K])S.days[K]={a:[]};
+const D=S.days[K];
+let pending=null;
+
+function drawTop(cur){
+  strip.innerHTML=SET.map((q,i)=>{const a=D.a[i];const cls=a==null?(i===cur?'cur':''):(a.ok?'ok':'bad');
+    return `<div class="seg ${cls}" style="--c:${CATS[q.c].c}"><b></b>${CATS[q.c].name}</div>`}).join('');
+  const e=estimate();document.getElementById('iq').textContent=e.n?e.iq:'?';
+  document.getElementById('rng').textContent=e.n?`Estimated IQ ±${e.pm}`:'Estimated IQ';
+  const f=e.n?Math.max(2,Math.min(100,(e.iq-70)/90*100)):0;
+  document.getElementById('arc').setAttribute('stroke-dasharray',`${f} 100`)}
+const stars=d=>d<108?'Warm-up':d<116?'Moderate':d<126?'Tough':'Fiendish';
+
+function showQ(i){
+  const q=SET[i];card.style.setProperty('--c',CATS[q.c].c);drawTop(i);
+  card.innerHTML=`<div class="meta"><span class="tag"><i></i>${CATS[q.c].name} reasoning</span><span>Day ${K-START+1} · Puzzle ${i+1} of 5 · ${stars(q.d)}</span></div>
+  <div class="q"></div><div class="opts">${q.opts.map((o,j)=>`<button class="opt" data-j="${j}"></button>`).join('')}</div><div id="after"></div>`;
+  card.querySelector('.q').textContent=q.q;card.querySelectorAll('.opt').forEach((b,j)=>b.textContent=q.opts[j]);
+  card.classList.remove('pop');void card.offsetWidth;card.classList.add('pop');
+  card.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(i,+b.dataset.j));
+  card.querySelector('.opt').focus({preventScroll:true})}
+
+function answer(i,j){
+  const q=SET[i];const ok=j===q.ans;
+  D.a[i]={ok,j};S.hist.push({c:q.c,d:q.d,ok,k:K});save();drawTop(i);
+  card.querySelectorAll('.opt').forEach((b,x)=>{b.disabled=true;if(x===q.ans)b.classList.add('right');else if(x===j)b.classList.add('wrong')});
+  const last=i===4;const next=`<button class="btn" id="nx">${last?'See today\'s results':'Next puzzle'}</button>`;
+  let h=`<div class="fb"><h3>${ok?'Correct.':'Not this time.'}</h3><p id="ex"></p></div>`;
+  const ds=M.categories[q.c].drills||[];const dr=!ok&&ds.length?ds[(K+i)%ds.length]:null;
+  if(dr)h+=`<div class="drill" id="dr"><h3>Skill builder: ${CATS[q.c].name.toLowerCase()} reasoning</h3><p id="dt"></p>
+    <button class="btn ghost reveal" id="rv">Reveal answer</button><div class="ans"><p><b id="da"></b></p><p class="tip" id="dk"></p></div></div>`;
+  document.getElementById('after').innerHTML=h+next;
+  document.getElementById('ex').textContent=(ok?'':'The answer is '+q.opts[q.ans]+'. ')+q.ex;
+  if(dr){document.getElementById('dt').textContent=dr[0];document.getElementById('da').textContent=dr[1];document.getElementById('dk').textContent='Technique: '+dr[2]}
+  const rv=document.getElementById('rv');if(rv)rv.onclick=()=>document.getElementById('dr').classList.add('show');
+  document.getElementById('nx').onclick=()=>last?showDone():showQ(i+1)}
+
+function streak(){let s=0,k=K;while(S.days[k]&&S.days[k].a.filter(Boolean).length===5){s++;k--}return s}
+let timer=null;
+function showDone(){
+  drawTop(-1);card.style.setProperty('--c','var(--accent)');
+  const score=D.a.filter(a=>a&&a.ok).length;const e=estimate();
+  const per=ORDER.map(c=>{const h=S.hist.filter(x=>x.c===c);const p=h.length?Math.round(h.filter(x=>x.ok).length/h.length*100):0;return {c,p,n:h.length}});
+  const weak=per.filter(p=>p.n).sort((a,b)=>a.p-b.p)[0];
+  card.innerHTML=`<div class="meta"><span class="tag" style="--c:var(--accent)"><i></i>Today's grid is complete</span><span>Next set unlocks at 4pm</span></div>
+  <div class="big">${score}/5</div>
+  <p>Your running estimate is <b>${e.iq}</b>, give or take ${e.pm}, from ${e.n} puzzle${e.n>1?'s':''} so far.${weak&&weak.p<100?` Your area to work on is <b>${CATS[weak.c].name.toLowerCase()}</b> reasoning.`:''}</p>
+  <p class="tip">Next puzzles in</p><div class="clock" id="cd">--:--:--</div>
+  <div class="stats"><div class="stat"><b>${streak()}</b><span>Day streak</span></div><div class="stat"><b>${Object.keys(S.days).filter(k=>S.days[k].a.filter(Boolean).length===5).length}</b><span>Days played</span></div><div class="stat"><b>${e.n?Math.round(S.hist.filter(h=>h.ok).length/e.n*100):0}%</b><span>All time</span></div></div>
+  <div class="bars">${per.map(p=>`<div class="bar" style="--c:${CATS[p.c].c}"><span>${CATS[p.c].name}</span><div class="track"><i style="width:${p.p}%"></i></div><span>${p.n?p.p+'%':'-'}</span></div>`).join('')}</div>`;
+  const R=nextReset();clearInterval(timer);
+  const tick=()=>{const ms=R-new Date();if(ms<=0){clearInterval(timer);location.reload();return}
+    const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;
+    const el=document.getElementById('cd');if(el)el.textContent=[h,m,s].map(v=>String(v).padStart(2,'0')).join(':')};
+  tick();timer=setInterval(tick,1000)}
+
+const first=D.a.findIndex(a=>!a);const done=D.a.filter(Boolean).length;
+if(done>=5)showDone();else showQ(first===-1?done:first);
+}
+</script>
+</body>
+</html>
